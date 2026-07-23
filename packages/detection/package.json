@@ -1,0 +1,19 @@
+{
+  "name": "@localbrain/detection",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Detection engine — pluggable detectors (hardware, framework, package manager, assistant, existing AI usage, deploy target) with normalized results.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build"
+  }
+}

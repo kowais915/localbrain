@@ -1,0 +1,70 @@
+<svg width="256" height="260" viewBox="0 0 256 260" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="localbrain octopus mascot">
+  <defs>
+    <linearGradient id="mantle" x1="128" y1="22" x2="128" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a693ff"/>
+      <stop offset="1" stop-color="#c86ae0"/>
+    </linearGradient>
+    <linearGradient id="arms" x1="128" y1="150" x2="128" y2="238" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c86ae0"/>
+      <stop offset="1" stop-color="#56ccd6"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#5fb0ff"/>
+      <stop offset="1" stop-color="#2b64c8"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.6">
+      <stop offset="0" stop-color="#b7a6ff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#b7a6ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="128" cy="122" rx="122" ry="126" fill="url(#glow)"/>
+
+  <!-- tentacles (behind the mantle), curling with tapered round tips -->
+  <g stroke="url(#arms)" stroke-width="15" stroke-linecap="round" fill="none">
+    <path d="M92 150 C52 168 30 196 44 216 C52 226 66 222 62 209"/>
+    <path d="M102 157 C74 185 62 214 82 224 C93 229 99 218 90 212"/>
+    <path d="M113 161 C98 191 95 217 108 228"/>
+    <path d="M122 163 C117 195 117 217 121 235"/>
+    <path d="M134 163 C139 195 139 217 135 235"/>
+    <path d="M143 161 C158 191 161 217 148 228"/>
+    <path d="M154 157 C182 185 194 214 174 224 C163 229 157 218 166 212"/>
+    <path d="M164 150 C204 168 226 196 212 216 C204 226 190 222 194 209"/>
+  </g>
+
+  <!-- suckers on the two front tentacles -->
+  <g fill="#ffe1f4" opacity="0.9">
+    <circle cx="120" cy="194" r="2.5"/><circle cx="120" cy="208" r="2.3"/><circle cx="121" cy="222" r="2.1"/>
+    <circle cx="136" cy="194" r="2.5"/><circle cx="136" cy="208" r="2.3"/><circle cx="135" cy="222" r="2.1"/>
+  </g>
+
+  <!-- mantle / head: tall dome with two brow lobes over the eyes -->
+  <path d="M56 116
+           C56 60 88 24 128 24
+           C168 24 200 60 200 116
+           C197 140 180 151 161 151
+           C146 151 141 140 128 140
+           C115 140 110 151 95 151
+           C76 151 59 140 56 116 Z" fill="url(#mantle)"/>
+
+  <!-- light spots / highlights on the mantle -->
+  <g fill="#ffffff" opacity="0.16">
+    <circle cx="150" cy="58" r="6"/>
+    <circle cx="168" cy="80" r="4"/>
+    <circle cx="110" cy="50" r="4.5"/>
+    <circle cx="86" cy="92" r="3.5"/>
+    <circle cx="176" cy="108" r="3"/>
+  </g>
+
+  <!-- eyes tucked under the brow lobes -->
+  <g>
+    <ellipse cx="99" cy="150" rx="20" ry="23" fill="#ffffff"/>
+    <ellipse cx="157" cy="150" rx="20" ry="23" fill="#ffffff"/>
+    <circle cx="103" cy="153" r="11" fill="url(#iris)"/>
+    <circle cx="153" cy="153" r="11" fill="url(#iris)"/>
+    <circle cx="103" cy="153" r="5.5" fill="#101433"/>
+    <circle cx="153" cy="153" r="5.5" fill="#101433"/>
+    <circle cx="106" cy="149" r="2.6" fill="#ffffff"/>
+    <circle cx="156" cy="149" r="2.6" fill="#ffffff"/>
+  </g>
+</svg>

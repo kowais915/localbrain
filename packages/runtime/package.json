@@ -1,0 +1,30 @@
+{
+  "name": "@localbrain/runtime",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Model runtime — zero-auth downloader (CDN, resumable, SHA-256 verified, cached), node-llama-cpp inference engine, and OpenAI-compatible HTTP server.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@localbrain/detection": "*"
+  },
+  "peerDependencies": {
+    "node-llama-cpp": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "node-llama-cpp": {
+      "optional": true
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/lib" },
+    { "path": "packages/detection" },
+    { "path": "packages/runtime" },
+    { "path": "packages/adapters" },
+    { "path": "packages/cli" }
+  ]
+}

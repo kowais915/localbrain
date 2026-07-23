@@ -1,0 +1,22 @@
+{
+  "name": "@localbrain/adapters",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Assistant adapters (Cursor, Claude Code) and framework adapters (Next.js, Express) — write/merge/back-up config and inject client wiring, diffed and reversible.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@localbrain/detection": "*"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "//": "Used only by tsup for the bundled publish build. Disables composite / project references (which conflict with tsup's single-entry dts generation). Dev typechecking still uses tsconfig.json.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declarationMap": false,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"]
+}
