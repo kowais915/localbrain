@@ -16,6 +16,53 @@ import type { Engine, ChatMessage } from './inference.js';
 
 export const DEFAULT_PORT = 4141;
 
+/** Debug logger, gated on LOCALBRAIN_DEBUG. */
+const DEBUG = !!process.env.LOCALBRAIN_DEBUG;
+function dbg(...args: unknown[]): void {
+  if (DEBUG) console.error('[localbrain:server]', ...args);
+}
+
+/**
+ * Hard ceiling on how long the server will keep generating for one request.
+ * A stalled or runaway generation is aborted at this point so it stops holding
+ * the shared inference lock and every request queued behind it can proceed.
+ * Slightly above a typical client timeout. Override with
+ * LOCALBRAIN_REQUEST_TIMEOUT_MS.
+ */
+const REQUEST_TIMEOUT_MS = Number(process.env.LOCALBRAIN_REQUEST_TIMEOUT_MS) || 120_000;
+
+/**
+ * Build an AbortSignal for one request that fires when either the client
+ * disconnects (so we don't keep generating for someone who left) or the
+ * server-side hard timeout elapses. Returns the signal plus a cleanup fn to
+ * call once the request is fully handled.
+ */
+function requestAbort(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): { signal: AbortSignal; cleanup: () => void } {
+  const controller = new AbortController();
+  const onClose = () => {
+    if (!res.writableEnded) {
+      dbg('client disconnected before response finished — aborting generation');
+      controller.abort(new Error('client disconnected'));
+    }
+  };
+  const timer = setTimeout(() => {
+    dbg(`request exceeded ${REQUEST_TIMEOUT_MS}ms — aborting generation`);
+    controller.abort(new Error('server request timeout'));
+  }, REQUEST_TIMEOUT_MS);
+  timer.unref?.();
+  req.on('close', onClose);
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      clearTimeout(timer);
+      req.off('close', onClose);
+    },
+  };
+}
+
 export interface ServerOptions {
   engine: Engine;
   port?: number;
@@ -103,19 +150,36 @@ async function handle(
     const jsonSchema =
       body.response_format?.type === 'json_schema' ? body.response_format.json_schema?.schema : undefined;
 
+    const { signal, cleanup } = requestAbort(req, res);
     const params = {
       messages: body.messages,
       temperature: body.temperature,
       maxTokens: body.max_tokens,
       stop,
       jsonSchema,
+      signal,
     };
 
-    if (body.stream) {
-      await streamChat(res, engine, modelId, params);
-    } else {
-      const content = await engine.completeText(params);
-      sendJson(res, 200, chatCompletionPayload(modelId, content, 'stop'));
+    try {
+      if (body.stream) {
+        await streamChat(res, engine, modelId, params);
+      } else {
+        const content = await engine.completeText(params);
+        if (!res.writableEnded) {
+          sendJson(res, 200, chatCompletionPayload(modelId, content, 'stop'));
+        }
+      }
+    } catch (err) {
+      // Generation was aborted (client left or timed out) or failed. The client
+      // is likely gone; just make sure we don't leave the socket hanging.
+      dbg('chat request ended with error:', (err as Error)?.message ?? err);
+      if (!res.writableEnded) {
+        sendJson(res, 500, {
+          error: { message: String((err as Error)?.message ?? err), type: 'internal_error' },
+        });
+      }
+    } finally {
+      cleanup();
     }
     return;
   }

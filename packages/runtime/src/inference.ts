@@ -1,5 +1,23 @@
 import type { ModelSpec } from './models.js';
 
+/** Debug logger, gated on LOCALBRAIN_DEBUG. Prefixed so it's easy to grep. */
+const DEBUG = !!process.env.LOCALBRAIN_DEBUG;
+function dbg(...args: unknown[]): void {
+  if (DEBUG) console.error('[localbrain:engine]', ...args);
+}
+
+/**
+ * Hard cap on tokens generated per request when the caller doesn't set one.
+ * Without this, a small model that never emits a stop token generates until it
+ * fills the whole context window — which on a CPU can take minutes and blows
+ * past the client's timeout, then wedges every request queued behind it.
+ * Override with LOCALBRAIN_MAX_TOKENS.
+ */
+const DEFAULT_MAX_TOKENS = Number(process.env.LOCALBRAIN_MAX_TOKENS) || 1024;
+
+/** Monotonic id so debug logs can correlate a request across its lifecycle. */
+let nextReqId = 0;
+
 /**
  * Inference engine.
  * Wraps node-llama-cpp with PREBUILT binaries — never compiles on the user's
@@ -180,6 +198,8 @@ export async function createEngine(opts: CreateEngineOptions): Promise<Engine> {
       let done = false;
       let error: unknown;
       let notify: (() => void) | null = null;
+      const reqId = (nextReqId += 1);
+      const queuedAt = Date.now();
 
       const wake = () => {
         if (notify) {
@@ -189,29 +209,56 @@ export async function createEngine(opts: CreateEngineOptions): Promise<Engine> {
         }
       };
 
+      dbg(`#${reqId} queued`);
       void mutex
         .run(async () => {
+          // If the caller already gave up (client disconnected / timed out)
+          // while this request sat in the queue, don't burn the model on it.
+          if (params.signal?.aborted) {
+            dbg(`#${reqId} skipped — aborted before start`);
+            const e = new Error('aborted');
+            e.name = 'AbortError';
+            throw e;
+          }
+          const waitedMs = Date.now() - queuedAt;
+          const startedAt = Date.now();
+          let tokenCount = 0;
+          let firstTokenAt = 0;
+          dbg(`#${reqId} started (waited ${waitedMs}ms in queue)`);
+
           const { history, lastUser } = buildHistory(params.messages);
           // Reset to this request's history (stateless completions), then prompt.
           if (session.setChatHistory) session.setChatHistory(history);
           const grammar = await resolveGrammar(params);
+          const maxTokens = params.maxTokens ?? DEFAULT_MAX_TOKENS;
           await session.prompt(lastUser, {
             temperature: params.temperature,
-            maxTokens: params.maxTokens,
+            maxTokens,
             customStopTriggers: params.stop,
             grammar,
             signal: params.signal,
             onTextChunk: (chunk: string) => {
+              if (firstTokenAt === 0) {
+                firstTokenAt = Date.now();
+                dbg(`#${reqId} first token after ${firstTokenAt - startedAt}ms`);
+              }
+              tokenCount += 1;
               queue.push(chunk);
               wake();
             },
           });
+          dbg(
+            `#${reqId} done — ${tokenCount} chunks in ${Date.now() - startedAt}ms` +
+              (maxTokens ? ` (cap ${maxTokens})` : ''),
+          );
         })
         .then(() => {
           done = true;
           wake();
         })
         .catch((e) => {
+          const aborted = (e as Error)?.name === 'AbortError';
+          dbg(`#${reqId} ${aborted ? 'aborted' : 'errored'}: ${(e as Error)?.message ?? e}`);
           error = e;
           done = true;
           wake();
