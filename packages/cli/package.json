@@ -1,6 +1,6 @@
 {
   "name": "localbrain",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Give any app a free, private AI that runs on the user's own machine — no API key, no bill, works offline. One command, and it downloads its own brain.",
   "keywords": [
     "ai",
