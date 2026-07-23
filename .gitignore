@@ -51,3 +51,7 @@ Thumbs.db
 
 # ── scratch / transfer artifacts (never commit) ──────────────
 _to_delete/
+
+# rust client build artifacts
+clients/rust/target/
+clients/rust/Cargo.lock

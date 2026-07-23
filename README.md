@@ -10,6 +10,7 @@
 
 [![npm version](https://img.shields.io/npm/v/localbrain.svg?color=cb3837&logo=npm)](https://www.npmjs.com/package/localbrain)
 [![npm downloads](https://img.shields.io/npm/dm/localbrain.svg?color=cb3837)](https://www.npmjs.com/package/localbrain)
+[![Crates.io](https://img.shields.io/crates/v/localbrain?logo=rust&color=E43717&label=crate)](https://crates.io/crates/localbrain)
 [![CI](https://github.com/kowais915/localbrain/actions/workflows/ci.yml/badge.svg)](https://github.com/kowais915/localbrain/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.17-brightgreen)](https://nodejs.org)
@@ -122,6 +123,20 @@ Two pieces (like Prisma's `prisma` CLI + `@prisma/client`):
   ```
 
 `npx localbrain` wires this in for you (adds `lib/ai`, sets `LOCALBRAIN_URL`, installs `localbrain-client`).
+
+**Other languages:** the endpoint is OpenAI-compatible, so any language can call it. There's also a first-party **Rust** client:
+
+```toml
+[dependencies]
+localbrain = "0.1"
+```
+```rust
+use localbrain::Client;
+let ai = Client::new();
+let label = ai.classify(text, &["work", "personal", "urgent"]).await?;
+```
+
+See [`clients/rust`](./clients/rust) for the crate and Axum / Actix examples.
 
 ## CLI
 

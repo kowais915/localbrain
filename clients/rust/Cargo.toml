@@ -1,0 +1,22 @@
+[package]
+name = "localbrain"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Rust client for a localbrain endpoint — free, private, local AI (chat / classify / extract / summarize / embed). Talks to a local OpenAI-compatible model; no API key."
+license = "MIT"
+repository = "https://github.com/kowais915/localbrain"
+homepage = "https://github.com/kowais915/localbrain#readme"
+documentation = "https://docs.rs/localbrain"
+readme = "README.md"
+keywords = ["ai", "llm", "local", "offline", "openai"]
+categories = ["api-bindings", "asynchronous"]
+
+[dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

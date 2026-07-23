@@ -123,6 +123,20 @@ Two pieces (like Prisma's `prisma` CLI + `@prisma/client`):
 
 `npx localbrain` wires this in for you (adds `lib/ai`, sets `LOCALBRAIN_URL`, installs `localbrain-client`).
 
+**Other languages:** the endpoint is OpenAI-compatible, so any language can call it. There's also a first-party **Rust** client:
+
+```toml
+[dependencies]
+localbrain = "0.1"
+```
+```rust
+use localbrain::Client;
+let ai = Client::new();
+let label = ai.classify(text, &["work", "personal", "urgent"]).await?;
+```
+
+See [`clients/rust`](./clients/rust) for the crate and Axum / Actix examples.
+
 ## CLI
 
 | Command | What it does |
