@@ -67,6 +67,35 @@ export async function confirm(question: string, flags: GlobalFlags, defaultYes =
   }
 }
 
+/**
+ * Interactive single-choice menu. Returns the chosen option's value.
+ * Falls back to the default option when non-interactive or --yes is set.
+ */
+export async function select<T>(
+  question: string,
+  options: Array<{ label: string; value: T }>,
+  defaultIndex: number,
+  flags: GlobalFlags,
+): Promise<T> {
+  const def = Math.min(Math.max(0, defaultIndex), options.length - 1);
+  if (flags.yes || !stdin.isTTY) return options[def]!.value;
+
+  info('\n' + theme.bold(question));
+  options.forEach((o, i) => info(`  ${theme.brand(String(i + 1))}. ${o.label}`));
+  const rl = readline.createInterface({ input: stdin, output: stdout });
+  try {
+    while (true) {
+      const ans = (await rl.question(`Choose ${theme.dim(`[1-${options.length}], default ${def + 1}`)}: `)).trim();
+      if (!ans) return options[def]!.value;
+      const n = Number(ans);
+      if (Number.isInteger(n) && n >= 1 && n <= options.length) return options[n - 1]!.value;
+      warn(`Please enter a number between 1 and ${options.length}.`);
+    }
+  } finally {
+    rl.close();
+  }
+}
+
 /** Print a compact unified-ish diff for a single file change. */
 export function showDiff(path: string, before: string | null, after: string): void {
   info(theme.bold(`\n${path}`) + (before === null ? theme.dim(' (new file)') : ''));

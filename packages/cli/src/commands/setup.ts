@@ -4,6 +4,8 @@ import {
   downloadModel,
   DEFAULT_PORT,
   ensureHomeDirs,
+  SELECTABLE_MODELS,
+  sizeLabel,
   type ModelSpec,
   type DownloadProgress,
 } from '@localbrain/runtime';
@@ -17,7 +19,7 @@ import {
 import { stdout } from 'node:process';
 import type { GlobalFlags } from '../flags.js';
 import { computeWarnings } from '../warnings.js';
-import { announce, step, success, warn, info, error, confirm, showDiff, color, progressBar, section } from '../ui.js';
+import { announce, step, success, warn, info, error, confirm, select, showDiff, color, progressBar, section } from '../ui.js';
 import { banner, MARK } from '../branding.js';
 import { saveConfig, type LocalbrainConfig } from '../config.js';
 import { verifyWithSmokeTest } from '../server-runtime.js';
@@ -45,10 +47,24 @@ export async function runSetup(flags: GlobalFlags): Promise<void> {
     info('A hosted fallback (with your consent) is planned; for now, try a machine with more RAM or pass --model.');
     return;
   }
-  const model = choice.spec;
-  step(`Model: ${color.bold(model.label)} ${color.dim(`(${choice.reason})`)}`);
+  let model = choice.spec;
+  step(`Recommended for your machine: ${color.bold(model.label)} ${color.dim(`(${choice.reason})`)}`);
 
-  // 3. Warnings BEFORE acting
+  // 3. Let the user pick a model (interactive). --model and --yes skip the menu.
+  if (!flags.offline && !flags.model) {
+    const recommendedIdx = Math.max(0, SELECTABLE_MODELS.findIndex((m) => m.id === choice.spec!.id));
+    model = await select(
+      'Which model would you like to download? (bigger = smarter · smaller = faster & lighter)',
+      SELECTABLE_MODELS.map((m) => ({
+        label: `${m.label}  ${color.dim(sizeLabel(m))}${m.id === choice.spec!.id ? color.green('  ← recommended') : ''}`,
+        value: m,
+      })),
+      recommendedIdx,
+      flags,
+    );
+  }
+
+  // 4. Warnings for the CHOSEN model, before acting
   const warnings = computeWarnings(report, model);
   for (const w of warnings) {
     warn(`${w.message}\n    ${color.dim('↳ ' + w.mitigation)}`);
@@ -62,19 +78,12 @@ export async function runSetup(flags: GlobalFlags): Promise<void> {
     }
   }
 
-  // 4. Branch D: empty folder — set up endpoint, guide forward (don't scaffold).
+  // 5. Branch D: empty folder — set up endpoint, guide forward (don't scaffold).
   if (branch === 'D-empty-folder') {
     info(`\nThis folder is empty — there's no app to add AI to yet.`);
   }
 
-  // 5. Confirm + download the model
-  if (!flags.offline) {
-    const ok = await confirm(`Download ${model.label} now?`, flags, true);
-    if (!ok) {
-      info('No problem — re-run `npx localbrain` when ready. Nothing was changed.');
-      return;
-    }
-  }
+  // 6. Download the chosen model.
   const modelPath = await pullModel(model, flags);
   if (!modelPath) return;
 

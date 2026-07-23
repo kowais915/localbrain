@@ -89,7 +89,7 @@ export const BLESSED_MODELS: Record<string, ModelSpec> = {
     label: 'SmolLM2 1.7B Instruct (Q4_K_M)',
     tier: 'tiny',
     paramsB: 1.7,
-    sizeBytes: 0,
+    sizeBytes: 1_000_000_000, // ~1 GB
     license: 'Apache-2.0',
     spdxLicenseText: APACHE_2_0_NOTICE,
     sources: [
@@ -104,7 +104,7 @@ export const BLESSED_MODELS: Record<string, ModelSpec> = {
     label: 'Qwen2.5 3B Instruct (Q4_K_M)',
     tier: 'small',
     paramsB: 3,
-    sizeBytes: 0,
+    sizeBytes: 2_000_000_000, // ~2 GB
     license: 'Apache-2.0',
     spdxLicenseText: APACHE_2_0_NOTICE,
     sources: [
@@ -119,7 +119,7 @@ export const BLESSED_MODELS: Record<string, ModelSpec> = {
     label: 'Qwen2.5 7B Instruct (Q4_K_M)',
     tier: 'medium',
     paramsB: 7,
-    sizeBytes: 0,
+    sizeBytes: 4_500_000_000, // ~4.5 GB
     license: 'Apache-2.0',
     spdxLicenseText: APACHE_2_0_NOTICE,
     sources: [
@@ -160,6 +160,23 @@ export const SMOKE_TEST_MODEL: ModelSpec = BLESSED_MODELS['smollm2-135m']!;
 export function getModel(id: string): ModelSpec | null {
   if (id === QWEN_0_5B.id) return QWEN_0_5B;
   return BLESSED_MODELS[id] ?? null;
+}
+
+/** All user-selectable models, ordered lightest → largest (for the picker menu). */
+export const SELECTABLE_MODELS: ModelSpec[] = [
+  BLESSED_MODELS['smollm2-135m']!,
+  BLESSED_MODELS['smollm2-360m']!,
+  QWEN_0_5B,
+  BLESSED_MODELS['smollm2-1.7b']!,
+  BLESSED_MODELS['qwen2.5-3b']!,
+  BLESSED_MODELS['qwen2.5-7b']!,
+];
+
+/** Human-friendly download size, e.g. "~90 MB" / "~4.5 GB". */
+export function sizeLabel(spec: ModelSpec): string {
+  if (!spec.sizeBytes) return 'size varies';
+  const gb = spec.sizeBytes / 1e9;
+  return gb >= 1 ? `~${gb.toFixed(1)} GB` : `~${Math.round(spec.sizeBytes / 1e6)} MB`;
 }
 
 /** ~0.6–0.7 GB RAM per billion params (Q4) + headroom. */
