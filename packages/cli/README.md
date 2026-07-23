@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/octopus.svg" width="184" alt="localbrain octopus mascot" />
+<img src="https://raw.githubusercontent.com/kowais915/localbrain/main/assets/octopus.png" width="184" alt="localbrain octopus mascot" />
 
 # 🐙 localbrain
 

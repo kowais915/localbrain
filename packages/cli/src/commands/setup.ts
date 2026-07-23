@@ -20,7 +20,7 @@ import { stdout } from 'node:process';
 import type { GlobalFlags } from '../flags.js';
 import { computeWarnings } from '../warnings.js';
 import { announce, step, success, warn, info, error, confirm, select, showDiff, color, progressBar, section } from '../ui.js';
-import { banner, MARK } from '../branding.js';
+import { banner, MARK, commandName } from '../branding.js';
 import { saveConfig, type LocalbrainConfig } from '../config.js';
 import { verifyWithSmokeTest } from '../server-runtime.js';
 
@@ -221,7 +221,7 @@ function printDetectionSummary(report: DetectionReport, branch: string): void {
 
 function printNextSteps(branch: string, config: LocalbrainConfig, framework: string): void {
   section(`${MARK} You're set — your app has a brain`);
-  info(`Start the local AI anytime with: ${color.cyan('localbrain start')}`);
+  info(`Start the local AI anytime with: ${color.cyan(commandName() + ' start')}`);
   info(`Endpoint: ${color.cyan(config.endpointUrl)} ${color.dim('(OpenAI-compatible, no key)')}`);
   if (branch === 'D-empty-folder') {
     info(color.dim('\nHave an app elsewhere? Run me inside that project folder.'));

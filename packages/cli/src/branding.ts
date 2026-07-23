@@ -116,3 +116,12 @@ export function markLine(subtitle?: string): string {
   const name = gradient('localbrain');
   return `${MARK} ${name}${subtitle ? theme.dim(' · ' + subtitle) : ''}`;
 }
+
+/**
+ * How the CLI was invoked, so suggested commands are copy-pasteable:
+ * `npx localbrain` when run via npx (temporary, no global bin), else `localbrain`.
+ */
+export function commandName(): string {
+  const entry = process.argv[1] ?? '';
+  return /[\\/]_npx[\\/]/.test(entry) ? 'npx localbrain' : 'localbrain';
+}

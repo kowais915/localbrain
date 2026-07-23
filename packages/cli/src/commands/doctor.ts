@@ -4,6 +4,7 @@ import { loadConfig, readServerState, isPidAlive } from '../config.js';
 import { ai } from '@localbrain/lib';
 import { canWrite, localbrainHome } from '@localbrain/runtime';
 import { success, warn, error, info, color, announce } from '../ui.js';
+import { commandName } from '../branding.js';
 
 /**
  * `localbrain doctor`.
@@ -40,10 +41,10 @@ export async function runDoctor(_flags: GlobalFlags): Promise<void> {
   if (state && isPidAlive(state.pid)) {
     const health = await ai.health();
     if (health.ok) success(`Endpoint healthy at ${state.url} (model: ${health.model ?? 'unknown'}).`);
-    else fail(`Endpoint process is running but not responding: ${health.detail ?? ''}.`, 'Try `localbrain stop` then `localbrain start`.');
+    else fail(`Endpoint process is running but not responding: ${health.detail ?? ''}.`, `Try \`${commandName()} stop\` then \`${commandName()} start\`.`);
   } else {
     warn('Endpoint is not running.');
-    info(color.dim('    ↳ Start it with `localbrain start`.'));
+    info(color.dim(`    ↳ Start it with \`${commandName()} start\`.`));
   }
 
   info('');
