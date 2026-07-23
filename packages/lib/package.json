@@ -1,6 +1,6 @@
 {
   "name": "localbrain-client",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Featherweight client for a localbrain endpoint — free, private, local AI (ai.chat / classify / extract / summarize / embed). Zero dependencies.",
   "keywords": [
     "ai",
