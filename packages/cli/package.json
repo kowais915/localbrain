@@ -55,11 +55,11 @@
   "devDependencies": {
     "@localbrain/adapters": "*",
     "@localbrain/detection": "*",
-    "@localbrain/lib": "*",
+    "localbrain-client": "*",
     "@localbrain/runtime": "*",
     "tsup": "^8.0.0"
   },
-  "//": "The internal @localbrain/* packages are private workspace deps and are BUNDLED into dist by tsup (noExternal). node-llama-cpp is kept external so its prebuilt native binaries install normally on the user's machine. This is why only one package ('localbrain') is published to npm.",
+  "//": "This CLI package ('localbrain') bundles the internal @localbrain/* workspace packages AND localbrain-client via tsup (noExternal); node-llama-cpp is kept external so its prebuilt binaries install normally. Apps should install the lightweight 'localbrain-client' package instead of this one — it has zero native deps.",
   "publishConfig": {
     "access": "public"
   }

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import type { GlobalFlags } from '../flags.js';
 import { loadConfig, readServerState, isPidAlive } from '../config.js';
-import { ai } from '@localbrain/lib';
+import { ai } from 'localbrain-client';
 import { canWrite, localbrainHome } from '@localbrain/runtime';
 import { success, warn, error, info, color, announce } from '../ui.js';
 import { commandName } from '../branding.js';

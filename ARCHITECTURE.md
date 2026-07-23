@@ -113,28 +113,31 @@ a login, token, account, or compiler.**
 
 ## Packaging & publish strategy
 
-This project is organized as five source packages. For distribution we publish **one**
-npm package so `npx localbrain` and `import { ai } from 'localbrain'` both work
-from a single install:
+This project is organized as five source packages and publishes **two** to npm
+(the Prisma model — a heavy CLI plus a featherweight client):
 
-- `packages/cli` is published as **`localbrain`**. It declares the `localbrain`
-  bin (`dist/cli.js`) and the library entry (`dist/index.js`, which re-exports
-  `ai` from `@localbrain/lib`).
-- `@localbrain/lib`, `@localbrain/detection`, `@localbrain/runtime`,
-  `@localbrain/adapters` are **private** workspace packages, bundled into the
-  published `localbrain` package by tsup (`noExternal`). They are never published
-  on their own.
-- `node-llama-cpp` is kept **external** (a real dependency of the published
-  package) so its prebuilt native binaries install normally on the user's
-  machine.
+- **`localbrain`** (`packages/cli`) — the CLI, run via `npx localbrain`. It declares
+  the `localbrain` bin (`dist/cli.js`) and bundles the internal `@localbrain/*`
+  workspace packages **and** `localbrain-client` via tsup (`noExternal`).
+  `node-llama-cpp` is kept **external** so its prebuilt native binaries install
+  normally when the CLI runs.
+- **`localbrain-client`** (`packages/lib`) — the `ai.*` HTTP client that apps
+  install (`npm i localbrain-client`). **Zero dependencies** — it only calls
+  `fetch` against the local endpoint, so it installs in seconds and bundles for
+  any target (including edge/serverless build steps). Apps import from here, never
+  from `localbrain`, so they never pull `node-llama-cpp`.
+- `@localbrain/detection`, `@localbrain/runtime`, `@localbrain/adapters` stay
+  **private** workspace packages, bundled into the `localbrain` CLI only.
 
-Development uses TypeScript project references (`tsc --build`) across the
-workspace for fast incremental typechecking; production uses tsup to produce the
-single bundled `localbrain` artifact.
+Both packages are versioned in lockstep by semantic-release: `@semantic-release/npm`
+publishes the CLI, and an `@semantic-release/exec` step versions + publishes
+`localbrain-client` at the same version.
 
-Rationale: keeping the layers as separate workspace packages preserves the clean
-architectural boundaries and makes adapters a self-contained contribution
-surface, while bundling keeps the user-facing install to one package.
+Development uses TypeScript project references (`tsc --build`) across the workspace
+for fast incremental typechecking; production uses tsup to bundle the CLI.
+
+Rationale: the split keeps app installs tiny and native-dep-free while `npx localbrain`
+carries the full runtime — apps pay only for the thin client they actually use.
 
 ## Reversibility & safety
 

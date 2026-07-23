@@ -17,6 +17,7 @@ import {
   type AdapterPlan,
 } from '@localbrain/adapters';
 import { stdout } from 'node:process';
+import { spawn } from 'node:child_process';
 import type { GlobalFlags } from '../flags.js';
 import { computeWarnings } from '../warnings.js';
 import { announce, step, success, warn, info, error, confirm, select, showDiff, color, progressBar, section } from '../ui.js';
@@ -102,7 +103,7 @@ export async function runSetup(flags: GlobalFlags): Promise<void> {
   // 7. Wire the app (unless --config-only or empty folder).
   const ctx: AdapterContext = { cwd: process.cwd(), endpointUrl: config.endpointUrl, modelId: model.id };
   if (branch !== 'D-empty-folder' && !flags.configOnly) {
-    await wireFrameworks(ctx, report.project.framework, flags);
+    await wireFrameworks(ctx, report.project.packageManager, flags);
   }
   await wireAssistants(ctx, flags);
 
@@ -175,13 +176,41 @@ async function pullModel(model: ModelSpec, flags: GlobalFlags): Promise<string |
   return result.path;
 }
 
-async function wireFrameworks(ctx: AdapterContext, _framework: string, flags: GlobalFlags): Promise<void> {
+async function wireFrameworks(ctx: AdapterContext, packageManager: string, flags: GlobalFlags): Promise<void> {
   for (const adapter of frameworkAdapters) {
     if (!(await adapter.detect(ctx))) continue;
     const plan = await adapter.plan(ctx);
     await applyAdapterPlan(`framework: ${adapter.id}`, plan, flags);
+    // The generated lib/ai helper imports `localbrain-client`, so install it.
+    await installClient(packageManager, ctx.cwd, flags);
     return; // one framework
   }
+}
+
+/** Install the lightweight `localbrain-client` package with the detected package manager. */
+async function installClient(packageManager: string, cwd: string, flags: GlobalFlags): Promise<void> {
+  const add: Record<string, [string, string]> = {
+    npm: ['npm', 'install'],
+    pnpm: ['pnpm', 'add'],
+    yarn: ['yarn', 'add'],
+    bun: ['bun', 'add'],
+  };
+  const [bin, sub] = add[packageManager] ?? add.npm!;
+  const pretty = `${bin} ${sub} localbrain-client`;
+
+  const ok = await confirm(`Install the AI client so your code can import it? ${color.dim(`(${pretty})`)}`, flags, true);
+  if (!ok) {
+    info(color.dim(`Skipped — install it yourself later: ${pretty}`));
+    return;
+  }
+  announce(`Installing localbrain-client with ${bin}`, 'a few seconds');
+  const code = await new Promise<number>((resolve) => {
+    const child = spawn(bin, [sub, 'localbrain-client'], { cwd, stdio: 'inherit' });
+    child.on('error', () => resolve(1));
+    child.on('exit', (c) => resolve(c ?? 1));
+  });
+  if (code === 0) success('Installed localbrain-client.');
+  else warn(`Couldn't run ${pretty} automatically — run it yourself in this folder.`);
 }
 
 async function wireAssistants(ctx: AdapterContext, flags: GlobalFlags): Promise<void> {
@@ -228,7 +257,7 @@ function printNextSteps(branch: string, config: LocalbrainConfig, framework: str
     return;
   }
   if (framework === 'nextjs' || framework === 'node-express') {
-    info(`\nIn code:\n  ${color.dim("import { ai } from 'localbrain'")}\n  ${color.dim("await ai.classify(text, ['work','personal','urgent'])")}`);
+    info(`\nIn code:\n  ${color.dim("import { ai } from 'localbrain-client'")}\n  ${color.dim("await ai.classify(text, ['work','personal','urgent'])")}`);
   } else {
     info(`\nCall it from any OpenAI-compatible client at ${color.cyan(config.endpointUrl)} (no key).`);
   }

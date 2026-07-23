@@ -18,7 +18,7 @@ export default defineConfig({
   sourcemap: true,
   splitting: false,
   noExternal: [
-    '@localbrain/lib',
+    'localbrain-client',
     '@localbrain/detection',
     '@localbrain/runtime',
     '@localbrain/adapters'

@@ -62,7 +62,12 @@ export async function startServer(opts: ServerOptions): Promise<RunningServer> {
     url,
     port,
     stop: () =>
-      new Promise<void>((resolve, reject) => server.close((e) => (e ? reject(e) : resolve()))),
+      new Promise<void>((resolve, reject) => {
+        // Force-close idle AND active (keep-alive) connections so close() can't
+        // hang waiting for a client that's holding the socket open.
+        (server as unknown as { closeAllConnections?: () => void }).closeAllConnections?.();
+        server.close((e) => (e ? reject(e) : resolve()));
+      }),
   };
 }
 

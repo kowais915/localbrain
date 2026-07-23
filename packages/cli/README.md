@@ -47,7 +47,7 @@ const category = (await openai.chat.completions.create({
 After — free, private, offline, one import:
 
 ```js
-import { ai } from 'localbrain'
+import { ai } from 'localbrain-client'
 
 // Tag a support message — runs locally, costs nothing
 const category = await ai.classify(msg, ['billing', 'bug', 'feature-request'])
@@ -107,15 +107,21 @@ Already calling a paid API? Run `localbrain replace-api` to swap those calls to 
 
 ## Install
 
-Once published, the whole thing is just `npx localbrain`. **Until the first npm release**, run it from source:
+Two pieces (like Prisma's `prisma` CLI + `@prisma/client`):
 
-```bash
-git clone https://github.com/kowais915/localbrain.git
-cd localbrain
-npm install
-npm run build
-node packages/cli/dist/cli.js          # same as `npx localbrain`
-```
+- **`localbrain`** — the CLI. Run it with `npx` in your project to set up the local model + endpoint; no install needed:
+  ```bash
+  npx localbrain
+  ```
+- **`localbrain-client`** — the featherweight library your app code imports. **Zero dependencies** (just `fetch` to the local endpoint), so it installs in seconds and bundles cleanly:
+  ```bash
+  npm i localbrain-client
+  ```
+  ```js
+  import { ai } from 'localbrain-client'
+  ```
+
+`npx localbrain` wires this in for you (adds `lib/ai`, sets `LOCALBRAIN_URL`, installs `localbrain-client`).
 
 ## CLI
 
@@ -134,7 +140,7 @@ Global flags: `--yes` · `--model <name>` · `--config-only` · `--offline` · `
 ## Library
 
 ```ts
-import { ai } from 'localbrain'
+import { ai } from 'localbrain-client'
 
 ai.chat(prompt, opts?)                 // → string
 ai.classify(text, labels)              // → one label (grammar-constrained)

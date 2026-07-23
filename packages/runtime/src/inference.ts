@@ -138,28 +138,31 @@ export async function createEngine(opts: CreateEngineOptions): Promise<Engine> {
 
   const modelInfo: LoadedModelInfo = { spec: opts.spec, contextSize: context.contextSize };
 
-  function buildSession(
-    sequence: NllamaSequence,
-    messages: ChatMessage[],
-  ): { session: NllamaChatSession; lastUser: string } {
+  // ONE long-lived sequence + chat session, reused for every request. Requests
+  // are serialized by the mutex, and each one resets the chat history — so we
+  // never churn context sequences (which wedges after a couple of requests).
+  const contextSequence = context.getSequence();
+  const session = new nllama.LlamaChatSession({ contextSequence });
+
+  type HistoryEntry = { type: 'system' | 'user' | 'model'; text: string };
+
+  /** Turn OpenAI-style messages into (prior history, final user prompt). */
+  function buildHistory(messages: ChatMessage[]): { history: HistoryEntry[]; lastUser: string } {
+    const history: HistoryEntry[] = [];
     const systemPrompt = messages
       .filter((m) => m.role === 'system')
       .map((m) => m.content)
       .join('\n\n');
-    const session = new nllama.LlamaChatSession({
-      contextSequence: sequence,
-      systemPrompt: systemPrompt || undefined,
-    });
+    if (systemPrompt) history.push({ type: 'system', text: systemPrompt });
+
     const nonSystem = messages.filter((m) => m.role !== 'system');
     const lastUserIdx = [...nonSystem].reverse().findIndex((m) => m.role === 'user');
     const cutIdx = lastUserIdx === -1 ? nonSystem.length : nonSystem.length - 1 - lastUserIdx;
-    const history = nonSystem.slice(0, cutIdx).map((m) => ({
-      type: (m.role === 'assistant' ? 'model' : 'user') as 'user' | 'model',
-      text: m.content,
-    }));
-    if (history.length > 0 && session.setChatHistory) session.setChatHistory(history);
+    for (const m of nonSystem.slice(0, cutIdx)) {
+      history.push({ type: m.role === 'assistant' ? 'model' : 'user', text: m.content });
+    }
     const lastUser = cutIdx < nonSystem.length ? nonSystem[cutIdx]!.content : '';
-    return { session, lastUser };
+    return { history, lastUser };
   }
 
   async function resolveGrammar(params: CompletionParams): Promise<unknown> {
@@ -188,27 +191,21 @@ export async function createEngine(opts: CreateEngineOptions): Promise<Engine> {
 
       void mutex
         .run(async () => {
-          // One sequence per request, released afterwards so the context's
-          // sequence pool never runs dry ("No sequences left").
-          const sequence = context.getSequence();
-          try {
-            const { session, lastUser } = buildSession(sequence, params.messages);
-            const grammar = await resolveGrammar(params);
-            await session.prompt(lastUser, {
-              temperature: params.temperature,
-              maxTokens: params.maxTokens,
-              customStopTriggers: params.stop,
-              grammar,
-              signal: params.signal,
-              onTextChunk: (chunk: string) => {
-                queue.push(chunk);
-                wake();
-              },
-            });
-            session.dispose?.();
-          } finally {
-            sequence.dispose?.();
-          }
+          const { history, lastUser } = buildHistory(params.messages);
+          // Reset to this request's history (stateless completions), then prompt.
+          if (session.setChatHistory) session.setChatHistory(history);
+          const grammar = await resolveGrammar(params);
+          await session.prompt(lastUser, {
+            temperature: params.temperature,
+            maxTokens: params.maxTokens,
+            customStopTriggers: params.stop,
+            grammar,
+            signal: params.signal,
+            onTextChunk: (chunk: string) => {
+              queue.push(chunk);
+              wake();
+            },
+          });
         })
         .then(() => {
           done = true;

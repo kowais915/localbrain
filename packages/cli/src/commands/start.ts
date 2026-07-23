@@ -29,18 +29,29 @@ export async function runStart(flags: GlobalFlags): Promise<void> {
   success(`Local AI ready at ${color.cyan(server.url)} ${color.dim('(no API key required)')}`);
   info(color.dim('Press Ctrl+C to stop.'));
 
+  let stopping = false;
   const shutdown = async () => {
+    if (stopping) {
+      // Second Ctrl+C: don't wait around, just go.
+      process.exit(0);
+    }
+    stopping = true;
     info('\nStopping…');
+    // Safety net: never hang on shutdown.
+    const force = setTimeout(() => process.exit(0), 3000);
+    force.unref?.();
     try {
-      await server.stop();
+      await server.stop(); // force-closes open connections (see server.ts)
       await engine.unload();
+    } catch {
+      // ignore — we're exiting anyway
     } finally {
       await clearServerState();
       process.exit(0);
     }
   };
-  process.on('SIGINT', () => void shutdown());
-  process.on('SIGTERM', () => void shutdown());
+  process.once('SIGINT', () => void shutdown());
+  process.once('SIGTERM', () => void shutdown());
 
   // Keep the process alive until a signal triggers shutdown.
   await new Promise<never>(() => {});

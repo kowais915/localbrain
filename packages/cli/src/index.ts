@@ -3,7 +3,7 @@
  * Re-exports the ai.* client so `import { ai } from 'localbrain'` works
  *. The CLI bin lives in cli.ts.
  */
-export { ai, createAi, LocalProvider, LocalbrainError } from '@localbrain/lib';
+export { ai, createAi, LocalProvider, LocalbrainError } from 'localbrain-client';
 export type {
   Ai,
   Provider,
@@ -12,4 +12,4 @@ export type {
   ExtractSchema,
   LocalProviderConfig,
   LocalbrainErrorCode,
-} from '@localbrain/lib';
+} from 'localbrain-client';
